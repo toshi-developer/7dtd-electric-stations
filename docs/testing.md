@@ -96,18 +96,20 @@ ssh -i ~/.ssh/private_infra root@162.43.7.73 "systemctl restart 7dtd || service 
 
 ### 4. ゲーム内確認チェックリスト
 
-#### Electric Forge
+#### Electric Forge（Phase 2 — 電力グリッド連動）
 - [ ] クリエイティブメニューに「Electric Forge」が表示される
 - [ ] ブロックを設置すると炉のモデルが表示される
 - [ ] 右クリック → 炉 UI が開く
-- [ ] 鉄鉱石などを入れると燃料なしで製錬が進む
+- [ ] 隣にワイヤーリレー（`wireTripRelay`等）を設置 → 発電機で配線 ON → 鉄鉱石を入れると製錬が進む
+- [ ] 発電機を OFF → 製錬が停止する（fuelInForgeInTicks が補充されず自然停止）
 - [ ] サーバーログに `[ElectricWorkstation] Harmony patches applied.` が出る
 
-#### Electric Chemistry Station
+#### Electric Chemistry Station（Phase 2 — 電力グリッド連動）
 - [ ] クリエイティブメニューに「Electric Chemistry Station」が表示される
 - [ ] ブロックを設置すると化学ステーションのモデルが表示される
 - [ ] 右クリック → ワークステーション UI が開く（燃料スロットなし）
-- [ ] 材料を入れてレシピが進行する（IsBurning=true で動作）
+- [ ] 隣にワイヤーリレー（`wireTripRelay`等）を設置 → 発電機で配線 ON → 材料を入れてレシピが進行する
+- [ ] 発電機を OFF → `IsBurning = false` になりクラフトが停止する
 
 ### 5. ログ確認
 
@@ -120,16 +122,18 @@ ssh -i ~/.ssh/private_infra root@162.43.7.73 \
 
 | 症状 | 対処 |
 |------|------|
-| 炉が動かない（製錬が進まない） | ログで `TileEntityForge patch error` を確認。`fuelInForgeInTicks` フィールド名が変わった可能性 |
-| 化学ステーションが動かない | ブロック名 `workstationChemistryStation` が正しいか確認（バージョンにより異なる可能性） |
+| 炉が動かない（製錬が進まない） | 隣接ブロックに `TileEntityPoweredBlock` が存在するか確認。ログで `TileEntityForge patch error` を確認 |
+| 化学ステーションが動かない | 隣接ブロックが powered かつ IsPowered=true になっているか確認 |
+| 電力 ON なのに動かない | リレーが発電機から配線されているか確認。`wireTripRelay` は初期 OFF のため手動で ON にする必要あり |
 | DLL ロードエラー | `0_TFP_Harmony` が導入済みか確認 |
 
 ---
 
-## 既知の制限（Phase 1）
+## Phase 2 動作仕様
 
-- 電力グリッム不要で常時動作する（電力接続のチェックなし）
-- Phase 2 で `PowerManager` 連携を実装予定（Issue #TBD）
+- `electricForge` / `electricChemistryStation` の上下左右前後 6 マスのいずれかに、電力を受けている `TileEntityPoweredBlock`（リレー・スイッチ等）があれば動作する
+- 電力が切れると自動停止（炉は fuelInForgeInTicks が自然に 0 になり停止、化学ステーションは IsBurning=false）
+- 推奨: `wireTripRelay`（ワイヤートリップリレー）を隣に設置し、発電機から配線する（Issue #4）
 
 ## トラブルシューティング
 

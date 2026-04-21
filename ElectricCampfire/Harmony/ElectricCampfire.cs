@@ -17,13 +17,64 @@ public class ElectricCampfire : IModApi
 }
 
 /// <summary>
-/// Patch TileEntityWorkstation.UpdateTick so that electricCampfire blocks
-/// stay "burning" without consuming any fuel.
+/// Shared utility: checks whether any of the 6 adjacent blocks carries
+/// a powered TileEntity (TileEntityPoweredBlock) with IsPowered == true.
 ///
-/// Phase 1 — always on: IsBurning is forced true whenever the block at the
-///            TileEntity's position is tagged as IsElectricWorkstation.
-/// Phase 2 — power grid (TODO): query PowerManager to gate IsBurning on
-///            whether the block is actually receiving grid power.
+/// Usage (Phase 2):
+///   Place a vanilla powered block — e.g. wireTripRelay, electricSwitch —
+///   directly next to the electric campfire and wire it to a generator.
+///   As long as that adjacent block is receiving power the campfire runs.
+/// </summary>
+internal static class ElectricCampfireUtils
+{
+    private static readonly Vector3i[] AdjacentOffsets = new[]
+    {
+        new Vector3i( 1, 0, 0),
+        new Vector3i(-1, 0, 0),
+        new Vector3i( 0, 1, 0),
+        new Vector3i( 0,-1, 0),
+        new Vector3i( 0, 0, 1),
+        new Vector3i( 0, 0,-1),
+    };
+
+    /// <summary>
+    /// Returns true if at least one of the 6 neighbours has a powered tile
+    /// entity that is currently receiving grid power.
+    /// </summary>
+    internal static bool HasAdjacentPower(World world, Vector3i pos)
+    {
+        foreach (var offset in AdjacentOffsets)
+        {
+            Vector3i adjPos = pos + offset;
+            TileEntityPoweredBlock te = world.GetTileEntity(0, adjPos) as TileEntityPoweredBlock;
+            if (te != null && te.IsPowered)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true when the block at <paramref name="pos"/> is marked as an
+    /// electric workstation via the XML property IsElectricWorkstation=true.
+    /// </summary>
+    internal static bool IsElectricWorkstation(World world, Vector3i pos)
+    {
+        BlockValue bv = world.GetBlock(0, pos);
+        Block block = bv.Block;
+        if (block == null) return false;
+        if (!block.Properties.Contains("IsElectricWorkstation")) return false;
+        return block.Properties.GetBool("IsElectricWorkstation");
+    }
+}
+
+/// <summary>
+/// Patch TileEntityWorkstation.UpdateTick so that electricCampfire blocks
+/// run only when adjacent to a powered block.
+///
+/// Phase 2 — power grid: IsBurning is set/cleared based on whether any of the
+///            6 neighbours carries a TileEntityPoweredBlock with IsPowered == true.
+///            Place a wireTripRelay (or any powered block) next to the campfire
+///            and connect it to a generator to enable operation.
 /// </summary>
 [HarmonyPatch(typeof(TileEntityWorkstation), "UpdateTick")]
 public static class Patch_TileEntityWorkstation_UpdateTick
@@ -35,33 +86,26 @@ public static class Patch_TileEntityWorkstation_UpdateTick
             World world = GameManager.Instance.World;
             if (world == null) return;
 
-            // Get this TileEntity's world position
             Vector3i pos = __instance.ToWorldPos();
 
-            // Look up the block at that position
-            // clrIdx 0 = main world layer (valid for all player-placed blocks)
-            BlockValue bv = world.GetBlock(0, pos);
-            Block block = bv.Block;
-            if (block == null) return;
+            if (!ElectricCampfireUtils.IsElectricWorkstation(world, pos)) return;
 
-            // Only process blocks flagged as electric workstations
-            if (!block.Properties.Contains("IsElectricWorkstation")) return;
-            if (!block.Properties.GetBool("IsElectricWorkstation")) return;
+            // Phase 2: gate IsBurning on adjacent grid power
+            bool hasPower = ElectricCampfireUtils.HasAdjacentPower(world, pos);
 
-            // --- Phase 1: keep burning unconditionally ---
-            // TODO Phase 2: replace with power grid check, e.g.:
-            //   TileEntityPowered tePowered = world.GetTileEntity(0, pos) as TileEntityPowered;
-            //   bool hasPower = tePowered?.IsPowered ?? false;
-            //   if (!hasPower) { __instance.IsBurning = false; return; }
-
-            if (!__instance.IsBurning)
+            if (hasPower)
             {
-                __instance.IsBurning = true;
+                if (!__instance.IsBurning)
+                    __instance.IsBurning = true;
+            }
+            else
+            {
+                if (__instance.IsBurning)
+                    __instance.IsBurning = false;
             }
         }
         catch (System.Exception e)
         {
-            // Catch-all so a patch error never crashes the game tick
             Log.Warning("[ElectricCampfire] UpdateTick patch error: " + e.Message);
         }
     }

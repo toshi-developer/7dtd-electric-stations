@@ -20,7 +20,7 @@
 ## ターゲットバージョン
 
 - **7 Days to Die**: 2.6（最新）
-- **参照 DLL**: `projects/mod/_reference/7dtd-managed/Assembly-CSharp.dll`（game01 より、2.2.x 系）
+- **参照 DLL**: `projects/mod/_reference/7dtd-managed/Assembly-CSharp.dll`（sdtd-test より、V2.6 b14）
 - **Harmony**: HarmonyX（`0_TFP_Harmony` 経由）
 
 ## 技術スタック
@@ -70,6 +70,6 @@ IPowered / TileEntityPowered（電力グリッド）
 
 ## メモ
 
-- game01 の参照 DLL は 2.2.x 系。2.6 との API 差異が出たらユーザーのローカル DLL で差し替え
+- 参照 DLL は V2.6 b14（2026-04-21 更新）。DLL を差し替えた場合は両 modlet を `dotnet build` で再ビルドする
 - Nexus Mods ページは modlet ごとに 1 ページ作成予定
 - コード修正は必ず GitHub Issue を発行してから着手する
