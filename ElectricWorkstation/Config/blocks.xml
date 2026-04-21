@@ -1,0 +1,72 @@
+<configs>
+    <append xpath="/blocks">
+
+        <!--
+            Electric Forge
+            - Extends vanilla forge for smelting workstation behavior
+            - No fuel slot: fuelInForgeInTicks is kept non-zero by Harmony patch
+            - Phase 2: will require power grid connection
+        -->
+        <block name="electricForge">
+            <property name="Extends" value="forge"/>
+
+            <!-- Override: no zombie heat attraction (silent electric device) -->
+            <property name="HeatMapStrength" value="1"/>
+            <property name="HeatMapTime" value="0"/>
+            <property name="HeatMapFrequency" value="0"/>
+
+            <!-- UI overrides -->
+            <property name="DescriptionKey" value="electricForgeDesc"/>
+
+            <!-- Repair materials -->
+            <property class="RepairItems">
+                <property name="resourceForgedIron" value="6"/>
+                <property name="resourceElectricParts" value="4"/>
+            </property>
+
+            <!-- Marker for Harmony patch identification -->
+            <property name="IsElectricWorkstation" value="true"/>
+
+            <!-- Economic value -->
+            <property name="EconomicValue" value="1200"/>
+            <property name="MaxDamage" value="600"/>
+        </block>
+
+        <!--
+            Electric Chemistry Station
+            - Extends vanilla chemistry station for crafting workstation behavior
+            - No fuel slot: kept burning by Harmony patch (ElectricWorkstation.dll)
+            - Phase 2: will require power grid connection
+        -->
+        <block name="electricChemistryStation">
+            <property name="Extends" value="workstationChemistryStation"/>
+
+            <!-- Override: no zombie heat attraction (silent electric device) -->
+            <property name="HeatMapStrength" value="1"/>
+            <property name="HeatMapTime" value="0"/>
+            <property name="HeatMapFrequency" value="0"/>
+
+            <!-- Override: workstation modules — remove 'fuel' slot -->
+            <property class="Workstation">
+                <property name="Modules" value="tools,output,input"/>
+            </property>
+
+            <!-- UI overrides -->
+            <property name="DescriptionKey" value="electricChemistryStationDesc"/>
+
+            <!-- Repair materials -->
+            <property class="RepairItems">
+                <property name="resourceForgedIron" value="4"/>
+                <property name="resourceElectricParts" value="6"/>
+            </property>
+
+            <!-- Marker for Harmony patch identification -->
+            <property name="IsElectricWorkstation" value="true"/>
+
+            <!-- Economic value -->
+            <property name="EconomicValue" value="1000"/>
+            <property name="MaxDamage" value="500"/>
+        </block>
+
+    </append>
+</configs>
