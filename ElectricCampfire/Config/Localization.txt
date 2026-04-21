@@ -1,0 +1,3 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english,Context / Alternate Text,german,spanish,french,italian,japanese,koreana,polish,brazilian,russian,turkish,schinese,tchinese
+electricCampfire,blocks,Workstation,,,Electric Campfire,,Elektrischer Campfire,Fogata Eléctrica,Feu de camp électrique,Fornello Elettrico,電気コンロ,전기 캠프파이어,Elektryczne Ognisko,Fogueira Elétrica,Электрическая плита,Elektrikli Ocak,电磁炉,電磁爐
+electricCampfireDesc,blocks,Workstation,,,"An IH-style electric cooker. No fuel needed — powered by the electrical grid. Cook anywhere with a power connection.",,,,,,燃料不要の電気コンロ。電力グリッドに接続して使用します。,,,,,,,

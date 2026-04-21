@@ -1,0 +1,54 @@
+<configs>
+    <append xpath="/blocks">
+
+        <!--
+            Electric Campfire (IH-style)
+            - Extends vanilla campfire for cooking workstation behavior
+            - Uses modern electric stove model (no fire visual)
+            - No fuel slot: kept burning by Harmony patch (ElectricCampfire.dll)
+            - Phase 2: will require power grid connection
+        -->
+        <block name="electricCampfire">
+            <property name="Extends" value="campfire"/>
+
+            <!-- Override: model → modern electric stove -->
+            <property name="Model" value="@:Entities/LootContainers/stoveElectricModern_01Prefab.prefab"/>
+
+            <!-- Override: no fire particle (IH = no open flame) -->
+            <property name="ParticleName" value=""/>
+            <property name="ParticleOffset" value="0,0,0"/>
+
+            <!-- Override: no zombie heat attraction (silent electric device) -->
+            <property name="HeatMapStrength" value="1"/>
+            <property name="HeatMapTime" value="0"/>
+            <property name="HeatMapFrequency" value="0"/>
+
+            <!-- Override: no campfire AOE warmth buff (optional: remove if IH should warm nearby players) -->
+            <property name="ActiveRadiusEffects" value=""/>
+            <property name="BuffsWhenWalkedOn" value=""/>
+
+            <!-- Override: workstation modules — remove 'fuel' slot -->
+            <property class="Workstation">
+                <property name="Modules" value="tools,output,input"/>
+            </property>
+
+            <!-- UI overrides -->
+            <property name="DescriptionKey" value="electricCampfireDesc"/>
+            <property name="WorkstationIcon" value="ui_game_symbol_campfire"/>
+
+            <!-- Repair materials -->
+            <property class="RepairItems">
+                <property name="resourceForgedIron" value="4"/>
+                <property name="resourceElectricParts" value="4"/>
+            </property>
+
+            <!-- Marker for Harmony patch identification -->
+            <property name="IsElectricWorkstation" value="true"/>
+
+            <!-- Economic value -->
+            <property name="EconomicValue" value="800"/>
+            <property name="MaxDamage" value="500"/>
+        </block>
+
+    </append>
+</configs>

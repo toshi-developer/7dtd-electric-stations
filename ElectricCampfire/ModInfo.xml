@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xml>
+    <Name value="ElectricCampfire" />
+    <DisplayName value="Electric Campfire" />
+    <Description value="An IH-style electric campfire that cooks without fuel. Requires power grid connection (Phase 2)." />
+    <Author value="toshi_dev" />
+    <Version value="0.1.0" />
+    <Website value="https://github.com/toshi-developer/7dtd-electric-stations" />
+    <SkipWithAntiCheat value="false" />
+</xml>
