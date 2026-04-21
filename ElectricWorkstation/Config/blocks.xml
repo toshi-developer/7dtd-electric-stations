@@ -39,7 +39,7 @@
             - Phase 2: will require power grid connection
         -->
         <block name="electricChemistryStation">
-            <property name="Extends" value="workstationChemistryStation"/>
+            <property name="Extends" value="chemistryStation"/>
 
             <!-- Override: no zombie heat attraction (silent electric device) -->
             <property name="HeatMapStrength" value="1"/>
