@@ -17,13 +17,64 @@ public class ElectricWorkstation : IModApi
 }
 
 /// <summary>
-/// Patch TileEntityWorkstation.UpdateTick so that electricChemistryStation blocks
-/// stay "burning" without consuming any fuel.
+/// Shared utility: checks whether any of the 6 adjacent blocks carries
+/// a powered TileEntity (TileEntityPoweredBlock) with IsPowered == true.
 ///
-/// Phase 1 — always on: IsBurning is forced true whenever the block at the
-///            TileEntity's position is tagged as IsElectricWorkstation.
-/// Phase 2 — power grid (TODO): query PowerManager to gate IsBurning on
-///            whether the block is actually receiving grid power.
+/// Usage (Phase 2):
+///   Place a vanilla powered block — e.g. wireTripRelay, electricSwitch —
+///   directly next to the electric workstation and wire it to a generator.
+///   As long as that adjacent block is receiving power the workstation runs.
+/// </summary>
+internal static class ElectricWorkstationUtils
+{
+    private static readonly Vector3i[] AdjacentOffsets = new[]
+    {
+        new Vector3i( 1, 0, 0),
+        new Vector3i(-1, 0, 0),
+        new Vector3i( 0, 1, 0),
+        new Vector3i( 0,-1, 0),
+        new Vector3i( 0, 0, 1),
+        new Vector3i( 0, 0,-1),
+    };
+
+    /// <summary>
+    /// Returns true if at least one of the 6 neighbours has a powered tile
+    /// entity that is currently receiving grid power.
+    /// </summary>
+    internal static bool HasAdjacentPower(World world, Vector3i pos)
+    {
+        foreach (var offset in AdjacentOffsets)
+        {
+            Vector3i adjPos = pos + offset;
+            TileEntityPoweredBlock te = world.GetTileEntity(0, adjPos) as TileEntityPoweredBlock;
+            if (te != null && te.IsPowered)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true when the block at <paramref name="pos"/> is marked as an
+    /// electric workstation via the XML property IsElectricWorkstation=true.
+    /// </summary>
+    internal static bool IsElectricWorkstation(World world, Vector3i pos)
+    {
+        BlockValue bv = world.GetBlock(0, pos);
+        Block block = bv.Block;
+        if (block == null) return false;
+        if (!block.Properties.Contains("IsElectricWorkstation")) return false;
+        return block.Properties.GetBool("IsElectricWorkstation");
+    }
+}
+
+/// <summary>
+/// Patch TileEntityWorkstation.UpdateTick so that electricChemistryStation blocks
+/// run only when adjacent to a powered block.
+///
+/// Phase 2 — power grid: IsBurning is set/cleared based on whether any of the
+///            6 neighbours carries a TileEntityPoweredBlock with IsPowered == true.
+///            Place a wireTripRelay (or any powered block) next to the station
+///            and connect it to a generator to enable operation.
 /// </summary>
 [HarmonyPatch(typeof(TileEntityWorkstation), "UpdateTick")]
 public static class Patch_TileEntityWorkstation_UpdateTick
@@ -36,22 +87,21 @@ public static class Patch_TileEntityWorkstation_UpdateTick
             if (world == null) return;
 
             Vector3i pos = __instance.ToWorldPos();
-            BlockValue bv = world.GetBlock(0, pos);
-            Block block = bv.Block;
-            if (block == null) return;
 
-            if (!block.Properties.Contains("IsElectricWorkstation")) return;
-            if (!block.Properties.GetBool("IsElectricWorkstation")) return;
+            if (!ElectricWorkstationUtils.IsElectricWorkstation(world, pos)) return;
 
-            // --- Phase 1: keep burning unconditionally ---
-            // TODO Phase 2: replace with power grid check, e.g.:
-            //   TileEntityPowered tePowered = world.GetTileEntity(0, pos) as TileEntityPowered;
-            //   bool hasPower = tePowered?.IsPowered ?? false;
-            //   if (!hasPower) { __instance.IsBurning = false; return; }
+            // Phase 2: gate IsBurning on adjacent grid power
+            bool hasPower = ElectricWorkstationUtils.HasAdjacentPower(world, pos);
 
-            if (!__instance.IsBurning)
+            if (hasPower)
             {
-                __instance.IsBurning = true;
+                if (!__instance.IsBurning)
+                    __instance.IsBurning = true;
+            }
+            else
+            {
+                if (__instance.IsBurning)
+                    __instance.IsBurning = false;
             }
         }
         catch (System.Exception e)
@@ -63,12 +113,11 @@ public static class Patch_TileEntityWorkstation_UpdateTick
 
 /// <summary>
 /// Patch TileEntityForge.UpdateTick so that electricForge blocks smelt
-/// without consuming any fuel.
+/// only when adjacent to a powered block.
 ///
-/// The forge tracks remaining fuel via fuelInForgeInTicks (int).
-/// Phase 1 — always on: reset fuelInForgeInTicks to a large value each tick
-///            so CanOperate() always returns true and no real fuel is consumed.
-/// Phase 2 — power grid (TODO): gate the reset on whether the block has grid power.
+/// Phase 2 — power grid: fuelInForgeInTicks is refilled only while a
+///            neighbouring TileEntityPoweredBlock.IsPowered == true.
+///            When power is lost the forge drains its (virtual) fuel and stops.
 /// </summary>
 [HarmonyPatch(typeof(TileEntityForge), "UpdateTick")]
 public static class Patch_TileEntityForge_UpdateTick
@@ -85,19 +134,16 @@ public static class Patch_TileEntityForge_UpdateTick
             if (world == null) return;
 
             Vector3i pos = __instance.ToWorldPos();
-            BlockValue bv = world.GetBlock(0, pos);
-            Block block = bv.Block;
-            if (block == null) return;
 
-            if (!block.Properties.Contains("IsElectricWorkstation")) return;
-            if (!block.Properties.GetBool("IsElectricWorkstation")) return;
+            if (!ElectricWorkstationUtils.IsElectricWorkstation(world, pos)) return;
 
-            // --- Phase 1: keep fuel counter perpetually non-zero ---
-            // fuelInForgeInTicks is consumed each tick by the forge logic.
-            // By resetting it here before UpdateTick runs, no actual fuel item
-            // is ever loaded from the fuel slot (fuelInStorageInTicks stays 0).
-            // TODO Phase 2: gate this on power grid check.
-            __instance.fuelInForgeInTicks = FuelRefillTicks;
+            // Phase 2: refill fuel only while receiving adjacent grid power
+            if (ElectricWorkstationUtils.HasAdjacentPower(world, pos))
+            {
+                __instance.fuelInForgeInTicks = FuelRefillTicks;
+            }
+            // If no power: do NOT refill — the forge's own tick will drain
+            // fuelInForgeInTicks to 0 and smelting will halt naturally.
         }
         catch (System.Exception e)
         {
