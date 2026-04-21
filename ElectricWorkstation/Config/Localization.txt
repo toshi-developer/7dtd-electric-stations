@@ -1,0 +1,5 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english,Context / Alternate Text,german,spanish,french,italian,japanese,koreana,polish,brazilian,russian,turkish,schinese,tchinese
+electricForge,blocks,Workstation,,,Electric Forge,,Elektrischer Hochofen,Forja Eléctrica,Forge Électrique,Fornace Elettrica,電気炉,전기 용광로,Elektryczny Piec,Forja Elétrica,Электрическая кузница,Elektrikli Ocak,电炉,電爐
+electricForgeDesc,blocks,Workstation,,,"An electric forge. No fuel needed — powered by the electrical grid. Smelt materials anywhere with a power connection.",,,,,,燃料不要の電気炉。電力グリッドに接続して使用します。,,,,,,,
+electricChemistryStation,blocks,Workstation,,,Electric Chemistry Station,,Elektrische Chemiestation,Estación Química Eléctrica,Station Chimique Électrique,Stazione Chimica Elettrica,電気化学ステーション,전기 화학 스테이션,Elektryczna Stacja Chemiczna,Estação Química Elétrica,Электрическая химическая станция,Elektrikli Kimya İstasyonu,电动化学工作台,電動化學工作台
+electricChemistryStationDesc,blocks,Workstation,,,"An electric chemistry station. No fuel needed — powered by the electrical grid. Craft advanced items anywhere with a power connection.",,,,,,燃料不要の電気化学ステーション。電力グリッドに接続して使用します。,,,,,,,
